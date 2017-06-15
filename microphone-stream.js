@@ -23,6 +23,7 @@ function MicrophoneStream(stream, opts) {
   opts = opts || {};
 
   bufferSize = opts.bufferSize || bufferSize;
+  var encoder = opts.encoder; // encoder is used to transform data before it is bufferized
 
   // We can only emit one channel's worth of audio, so only one input. (Who has multiple microphones anyways?)
   var inputChannels = 1;
@@ -43,7 +44,9 @@ function MicrophoneStream(stream, opts) {
   function recorderProcess(e) {
     // onaudioprocess can be called at least once after we've stopped
     if (recording) {
-      self.push(opts.objectMode ? e.inputBuffer : Buffer.from(e.inputBuffer.getChannelData(0).buffer));
+      var rawData = opts.objectMode ? e.inputBuffer : e.inputBuffer.getChannelData(0);
+      var encodedData = encoder ? encoder(rawData) : rawData;
+      self.push(opts.objectMode ? encodedData : Buffer.from(encodedData.buffer));
     }
   }
 
